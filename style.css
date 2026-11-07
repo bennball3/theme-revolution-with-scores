@@ -237,24 +237,25 @@ h1 {
   height: 100cqw;
 }
 
-/* --- Features ---------------------------------------------------------------------- */
+/* --- High scores ------------------------------------------------------------------- */
 
 .sections {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2.4vmin;
+  grid-template-columns: minmax(0, 1fr);
 }
 
-.tags-section {
+.scores-section {
   min-width: 0;
 }
 
-/* A collection has no features to show. */
+/* A collection has no scores to show. */
 [data-view="collections"] .sections {
   display: none;
 }
 
 h2 {
+  display: flex;
+  justify-content: space-between;
   margin: 0 0 1.1vmin;
   color: var(--dim);
   font-size: 1.6vmin;
@@ -263,16 +264,22 @@ h2 {
   text-transform: uppercase;
 }
 
-.tags {
-  display: flex;
-  flex-wrap: wrap;
+.scores {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(5, auto);
+  grid-auto-flow: column;
   gap: 1vmin;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.tags li {
+.scores li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 1.2vmin;
+  min-width: 0;
   padding: 0.8vmin 1.7vmin;
   border: 1px solid var(--line);
   border-radius: 99vmin;
@@ -280,16 +287,38 @@ h2 {
   color: var(--dim);
   font-size: 1.7vmin;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  opacity: 0.55;
 }
 
-.tags li.on {
+.scores .rank {
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.scores .player {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scores .score {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.scores li.on {
   border-color: transparent;
   background: var(--gold);
   color: #1c1308;
-  opacity: 1;
+}
+
+.scores li.gap,
+.scores li.none {
+  opacity: 0.55;
+}
+
+.scores li.none {
+  display: block;
+  grid-column: 1 / -1;
 }
 
 .empty {
@@ -339,7 +368,7 @@ h2 {
   font-size: 4.2vmin;
 }
 
-[data-vpinfe-surface="portrait"] .tags li {
+[data-vpinfe-surface="portrait"] .scores li {
   padding: 0.6vmin 1.3vmin;
   font-size: 1.5vmin;
 }

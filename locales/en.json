@@ -1,6 +1,12 @@
 {
   "tables_label": "Tables",
-  "add_ons": "Add-ons",
+  "scores_heading": "VPC High Scores",
+  "weekly_heading": "Weekly Competition \u00b7 Week {week}",
+  "no_scores": "No VPC scores yet",
+  "players": {
+    "one": "{count} player",
+    "other": "{count} players"
+  },
   "collection": "Collection",
   "filter_collection": "Filter collection",
   "tables": {

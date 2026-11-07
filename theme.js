@@ -1,4 +1,4 @@
-// Revolution - a wheel carousel beside the selected table's art, title and features.
+// Revolution with Scores - a wheel carousel beside the selected table's art, title and VPC high scores.
 //
 // This file does four things, in this order: read the options, draw the wheel, draw the
 // selection, and hand every message to core. Input, audio, preloading, layout, the
@@ -138,17 +138,15 @@ const eyebrowEl = document.getElementById("eyebrow");
 const metaEl = document.getElementById("meta");
 const cabEl = document.getElementById("cab");
 const artEl = document.getElementById("art");
-const featuresEl = document.getElementById("features");
-const addonsEl = document.getElementById("addons");
+const scoresEl = document.getElementById("scores");
+const scoresHeadingEl = document.getElementById("scores-heading");
+const scoresCountEl = document.getElementById("scores-count");
 const emptyEl = document.getElementById("empty");
 
 function drawSelection(list) {
   const empty = list.length === 0;
   emptyEl.hidden = !empty;
   emptyEl.textContent = vpin.t("frontend.theme.no_tables_found", "No tables found");
-  document.getElementById("features-heading").textContent =
-    vpin.t("frontend.theme.detected_features", "Detected Features");
-  document.getElementById("addons-heading").textContent = vpin.t("theme.add_ons", "Add-ons");
   document.getElementById("selection").hidden = empty;
   if (empty) return;
 
@@ -159,7 +157,7 @@ function drawSelection(list) {
 }
 
 function drawTable(entry, index) {
-  const { game, table, assets } = entry;
+  const { game, table } = entry;
   nameEl.textContent = game.name;
   eyebrowEl.textContent = [game.manufacturer, game.year, game.type].filter(Boolean).join(" / ");
 
@@ -170,20 +168,7 @@ function drawTable(entry, index) {
   cabEl.hidden = !hasCab;
   if (hasCab) cabEl.src = vpin.getMediaURL(index, "cab");
 
-  drawTags(featuresEl, [
-    ["Nfozzy", table.detects.nfozzy],
-    ["Fleep", table.detects.fleep],
-    ["SSF", table.detects.ssf],
-    ["FastFlips", table.detects.fastflips],
-    ["LUT", table.detects.lut],
-    ["Scorbit", table.detects.scorbit],
-    ["FlexDMD", table.detects.flex],
-  ]);
-  drawTags(addonsEl, [
-    ["AltSound", assets.alt_sound],
-    ["AltColor", assets.alt_color],
-    ["PuP-Pack", assets.pup_pack],
-  ]);
+  drawScores(entry);
 }
 
 function drawCollection(row) {
@@ -199,14 +184,81 @@ function drawCollection(row) {
   cabEl.hidden = true;
 }
 
-// Every tag is drawn and the ones the table lacks are dimmed, so the row reads the same
-// from table to table.
-function drawTags(listEl, tags) {
-  listEl.replaceChildren(...tags.map(([label, on]) => {
-    const tag = document.createElement("li");
-    tag.textContent = label;
-    tag.classList.toggle("on", Boolean(on));
-    return tag;
+// The board for a table: the weekly one on the weekly table, otherwise every version's
+// scores merged to one line per player (best score), ranked with shared ranks for ties.
+const SCORE_ROWS = 10;
+
+function boardFor(entry) {
+  const ext = entry.ext || {};
+  if (ext.vpc_weekly) {
+    const weekly = ext.vpc_weekly;
+    return {
+      weekly: true,
+      week: weekly.week,
+      lines: (weekly.scores || []).map(s => ({ ...s, mine: Boolean(s.mine) })),
+    };
+  }
+  const best = new Map();
+  for (const version of (ext.vpc && ext.vpc.versions) || []) {
+    for (const s of version.scores || []) {
+      const key = String(s.player).toLowerCase();
+      const have = best.get(key);
+      if (!have || s.score > have.score) best.set(key, { ...s, mine: Boolean(s.mine) || Boolean(have && have.mine) });
+      else if (s.mine) have.mine = true;
+    }
+  }
+  const lines = [...best.values()].sort((a, b) => b.score - a.score);
+  lines.forEach((line, i) => {
+    line.rank = i > 0 && line.score === lines[i - 1].score ? lines[i - 1].rank : i + 1;
+  });
+  return { weekly: false, lines };
+}
+
+// Ten slots. The player's best line is shown even when it is below the top; a null is the gap.
+function pickRows(board) {
+  const lines = board.lines;
+  if (lines.length <= SCORE_ROWS) return lines;
+  const mineAt = lines.findIndex(l => l.mine);
+  if (mineAt < 0 || mineAt < SCORE_ROWS) return lines.slice(0, SCORE_ROWS);
+  return [...lines.slice(0, SCORE_ROWS - 2), null, lines[mineAt]];
+}
+
+function drawScores(entry) {
+  const board = boardFor(entry);
+  scoresHeadingEl.textContent = board.weekly
+    ? vpin.t("theme.weekly_heading", "Weekly Competition \u00b7 Week {week}", { week: board.week })
+    : vpin.t("theme.scores_heading", "VPC High Scores");
+  const total = board.lines.length;
+  scoresCountEl.textContent = total
+    ? vpin.t("theme.players", { one: "{count} player", other: "{count} players" }, { count: total })
+    : "";
+
+  if (!total) {
+    const none = document.createElement("li");
+    none.className = "none";
+    none.textContent = vpin.t("theme.no_scores", "No VPC scores yet");
+    scoresEl.replaceChildren(none);
+    return;
+  }
+  scoresEl.replaceChildren(...pickRows(board).map(line => {
+    const li = document.createElement("li");
+    const rank = document.createElement("span");
+    const player = document.createElement("span");
+    const score = document.createElement("span");
+    rank.className = "rank";
+    player.className = "player";
+    score.className = "score";
+    if (!line) {
+      li.className = "gap";
+      rank.textContent = "\u22ef";
+    } else {
+      rank.textContent = "#" + line.rank;
+      player.textContent = line.player;
+      score.textContent = Number(line.score).toLocaleString();
+      li.classList.toggle("on", line.mine);
+    }
+    li.append(rank, player, score);
+    return li;
   }));
 }
 
@@ -223,6 +275,12 @@ async function receiveEvent(message) {
     draw(message);
   } else if (message.type === "TableDataChange") {
     draw({ reason: "enter" });
+  } else if (message.type === "EntryDataChange") {
+    const list = vpin.activeList();
+    const current = list.length ? list.current : null;
+    if (list.kind !== "collection" && current && current.game && current.game.id === message.game_id) {
+      drawScores(current);
+    }
   }
 }
 
