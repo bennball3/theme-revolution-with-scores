@@ -186,7 +186,9 @@ function drawCollection(row) {
 
 // The board for a table: the weekly one on the weekly table, otherwise every version's
 // scores merged to one line per player (best score), ranked with shared ranks for ties.
-const SCORE_ROWS = 10;
+const SCORE_ROWS = 15;
+const TOP_ROWS = 3;
+const BELOW_ROWS = 1;
 
 function boardFor(entry) {
   const ext = entry.ext || {};
@@ -214,13 +216,30 @@ function boardFor(entry) {
   return { weekly: false, lines };
 }
 
-// Ten slots. The player's best line is shown even when it is below the top; a null is the gap.
+// Fifteen slots (3 columns of 5). When the player is outside the top, keep the top few, the
+// player's line and one below it, and spend the rest on lines spread evenly between, ending
+// right above the player, so each is a realistic next target. Ranks show where it skips.
 function pickRows(board) {
   const lines = board.lines;
-  if (lines.length <= SCORE_ROWS) return lines;
   const mineAt = lines.findIndex(l => l.mine);
-  if (mineAt < 0 || mineAt < SCORE_ROWS) return lines.slice(0, SCORE_ROWS);
-  return [...lines.slice(0, SCORE_ROWS - 2), null, lines[mineAt]];
+  if (lines.length <= SCORE_ROWS || mineAt < 0 || mineAt < SCORE_ROWS) return lines.slice(0, SCORE_ROWS);
+
+  const head = lines.slice(0, TOP_ROWS);
+  const tail = lines.slice(mineAt, mineAt + 1 + BELOW_ROWS);
+  const first = TOP_ROWS;                       // candidates: first .. mineAt-1
+  const count = mineAt - first;
+  const slots = SCORE_ROWS - head.length - tail.length;
+  const middle = [];
+  if (count <= slots) {
+    for (let i = first; i < mineAt; i++) middle.push(lines[i]);
+  } else {
+    const picked = new Set();
+    for (let i = 0; i < slots; i++) {
+      picked.add(mineAt - 1 - Math.round(i * (count - 1) / Math.max(slots - 1, 1)));
+    }
+    [...picked].sort((x, y) => x - y).forEach(i => middle.push(lines[i]));
+  }
+  return [...head, ...middle, ...tail];
 }
 
 function drawScores(entry) {
