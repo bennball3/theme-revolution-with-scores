@@ -295,9 +295,16 @@ async function receiveEvent(message) {
   } else if (message.type === "TableDataChange") {
     draw({ reason: "enter" });
   } else if (message.type === "EntryDataChange") {
+    // Core's own merge of late data looks at a list that does not exist (this.tables, where
+    // the list is tableData), so nothing lands on the entry. Merge it here; it is harmless
+    // once core does it too.
+    const id = String(message.game_id || "");
+    const held = (vpin.tableData || []).find(item => item && item.game && String(item.game.id) === id);
+    if (held && message.ext) held.ext = Object.assign({}, held.ext || {}, message.ext);
+
     const list = vpin.activeList();
     const current = list.length ? list.current : null;
-    if (list.kind !== "collection" && current && current.game && current.game.id === message.game_id) {
+    if (list.kind !== "collection" && current && current.game && String(current.game.id) === id) {
       drawScores(current);
     }
   }
