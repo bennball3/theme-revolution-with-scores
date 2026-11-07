@@ -2,15 +2,15 @@
 
 > **Work in progress.**  This theme is still being built and tested, and things may change or break.
 >
+> **Proof of concept.**  It exists to show how VPC high scores could look in a VPinFE theme, using the [`vpc_vpinfe`](https://github.com/bennball3/vpc_vpinfe) extension, not as a finished, supported theme.
+>
 > **Unofficial fork.**  This is an unofficial fork of the Revolution theme by superhac.  It is not made, endorsed or supported by the original author.
 
-Revolution with VPC high scores in place of the feature tags.  It needs the Virtual Pinball Chat extension (`vpc_vpinfe`); without it every table shows "No VPC scores yet".
+Revolution with VPC high scores in place of the feature tags.  It needs the Virtual Pinball Chat extension ([`vpc_vpinfe`](https://github.com/bennball3/vpc_vpinfe)); without it every table shows "No VPC scores yet".
 
 A theme for a desktop or a cabinet, built around a wheel.  The wheel runs down the left side.  The rest of the screen shows the table you are on: its playfield video or picture, its name, a picture of the cabinet and its high scores.
 
-![Revolution with Scores on a desktop](preview.png)
-
-On a tall cabinet screen the wheel runs along the bottom instead.
+On a tall cabinet screen the wheel runs along the bottom, as shown here.  On a wide screen it runs down the left side.
 
 ![Revolution with Scores on a cabinet](preview-cabinet.png)
 

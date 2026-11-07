@@ -3,7 +3,7 @@
   "version": "2.2.1",
   "author": "bennball3 (fork of Revolution by superhac)",
   "description": "A desktop and cab theme with a wheel carousel, the table's playfield and its Virtual Pinball Chat high scores.",
-  "layouts": {"desktop": "preview.png", "cab": "preview-cabinet.png"},
+  "layouts": {"cab": "preview-cabinet.png"},
   "change_log": "2.2.1: scores that arrive after the wheel has loaded now show without changing collection (works around core not merging late entry data).\n\n2.2.0: scores now show in three columns, and when your score is lower down the list is spread evenly between the top and you, so you can see realistic targets.\n\n2.1.0: The bottom row now shows VPC high scores in place of the feature tags: the weekly board on the weekly table, one merged line per player elsewhere, with your own score always visible. Needs the Virtual Pinball Chat extension.\n\nRebuilt for VPinFE 3.0.\n\nCore now handles input, audio, preloading, layout, the loading indicator, attract mode and the backglass and score view pages, so the theme is one playfield page. The wheel slides one step at a time and cuts when a page jumps.\n\nThe playfield art is the video or picture that Playfield Media Priority in VPinFE's settings asks for.\n\nStart on Collection Selection carries over from VPinFE 2.x. When it is off, Revolution with Scores starts on the collection set by Open On in VPinFE's settings.",
   "min_vpinfe": "3.0",
   "windows": ["playfield"]
