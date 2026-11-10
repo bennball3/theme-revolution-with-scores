@@ -152,7 +152,7 @@ function drawSelection(list) {
 
   const picking = list.kind === "collection";
   stage.dataset.view = picking ? "collections" : "tables";
-  if (picking) drawCollection(list.current);
+  if (picking) { stopWatching(); drawCollection(list.current); }
   else drawTable(list.current, list.cursor);
 }
 
@@ -252,6 +252,26 @@ function drawScores(entry) {
     ? vpin.t("theme.players", { one: "{count} player", other: "{count} players" }, { count: total })
     : "";
 
+  const ext = entry.ext || {};
+  const waiting = !total && !board.weekly && !ext.vpc && entry.game && !settled.has(String(entry.game.id));
+  scoresEl.setAttribute("aria-busy", waiting ? "true" : "false");
+  if (waiting) {
+    scoresCountEl.textContent = vpin.t("theme.loading_scores", "Loading scores…");
+    scoresEl.replaceChildren(...Array.from({ length: SCORE_ROWS }, () => {
+      const li = document.createElement("li");
+      li.className = "skeleton";
+      li.append(...["rank", "player", "score"].map((cls) => {
+        const bar = document.createElement("span");
+        bar.className = cls;
+        return bar;
+      }));
+      return li;
+    }));
+    watchScores(entry);
+    return;
+  }
+  stopWatching();
+
   if (!total) {
     const none = document.createElement("li");
     none.className = "none";
@@ -281,6 +301,61 @@ function drawScores(entry) {
   }));
 }
 
+// A table whose scores have not been fetched yet has no entry.ext.vpc, the same as a table
+// VPC has none for, and core does not say when the extension's fetch lands. So while the
+// skeleton is up, ask core for this game's data again every LOAD_POLL_MS (it forgets what it
+// held and re-asks the extension) until scores appear or LOAD_TIMEOUT_MS passes.
+const LOAD_POLL_MS = 1500;
+const LOAD_TIMEOUT_MS = 10000;
+const settled = new Set();  // game ids whose wait is over, so a revisit shows the result at once
+let watching = null;
+
+function mergeExt(id, ext) {
+  const held = (vpin.tableData || []).find(item => item && item.game && String(item.game.id) === id);
+  if (held && ext) held.ext = Object.assign({}, held.ext || {}, ext);
+  return held;
+}
+
+function stopWatching() {
+  if (watching) clearTimeout(watching.timer);
+  watching = null;
+}
+
+function watchScores(entry) {
+  const id = String(entry.game.id);
+  if (watching && watching.id === id) return;
+  stopWatching();
+  const watch = { id, started: Date.now(), timer: 0 };
+  watching = watch;
+
+  const selected = () => {
+    const list = vpin.activeList();
+    return list.length && list.kind !== "collection" ? list.current : null;
+  };
+  const tick = async () => {
+    if (watching !== watch) return;
+    let current = selected();
+    if (!current || String(current.game.id) !== id) return stopWatching();
+    try {
+      mergeExt(id, await vpin.call("refresh_entry_data", id));
+    } catch (error) {
+      // The next tick tries again; the timeout ends it.
+    }
+    if (watching !== watch) return;
+    current = selected();
+    if (!current || String(current.game.id) !== id) return stopWatching();
+    const got = Boolean((current.ext || {}).vpc);
+    if (got || Date.now() - watch.started >= LOAD_TIMEOUT_MS) {
+      settled.add(id);
+      stopWatching();
+      drawScores(current);
+    } else {
+      watch.timer = setTimeout(tick, LOAD_POLL_MS);
+    }
+  };
+  watch.timer = setTimeout(tick, LOAD_POLL_MS);
+}
+
 // --- 4. Messages --------------------------------------------------------------------
 // Core needs to see every message first: it keeps the selection, the audio and the
 // loading indicator in step with them. After that the theme draws.
@@ -299,8 +374,7 @@ async function receiveEvent(message) {
     // the list is tableData), so nothing lands on the entry. Merge it here; it is harmless
     // once core does it too.
     const id = String(message.game_id || "");
-    const held = (vpin.tableData || []).find(item => item && item.game && String(item.game.id) === id);
-    if (held && message.ext) held.ext = Object.assign({}, held.ext || {}, message.ext);
+    mergeExt(id, message.ext);
 
     const list = vpin.activeList();
     const current = list.length ? list.current : null;

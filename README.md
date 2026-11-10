@@ -16,7 +16,7 @@ On a tall cabinet screen the wheel runs along the bottom, as shown here.  On a w
 
 The wheel slides one card at a time and cuts when you jump a page.  The playfield is the table's video or image, whichever Playfield Media Priority in VPinFE's settings asks for.
 
-Under the name, the high scores panel lists the Virtual Pinball Chat scores for the table.  On the weekly competition table it shows only the weekly board.  On every other table it shows one merged board with one line per player, best score first.  Scores are shown in three columns of five.  The top three are always shown.  If your own score is lower down, the rest of the list is spread evenly between the top and your score, ending just above you, so you can see realistic targets to aim for, with your line (lit gold) and the one below it last.
+Under the name, the high scores panel lists the Virtual Pinball Chat scores for the table.  On the weekly competition table it shows only the weekly board.  On every other table it shows one merged board with one line per player, best score first.  Scores are shown in three columns of five.  The top three are always shown.  If your own score is lower down, the rest of the list is spread evenly between the top and your score, ending just above you, so you can see realistic targets to aim for, with your line (lit gold) and the one below it last.  A table whose scores have not been fetched yet shows a loading placeholder for a few seconds while the extension asks VPC, then the scores appear.
 
 ## Install
 

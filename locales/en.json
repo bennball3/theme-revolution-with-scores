@@ -3,6 +3,7 @@
   "scores_heading": "VPC High Scores",
   "weekly_heading": "Weekly Competition \u00b7 Week {week}",
   "no_scores": "No VPC scores yet",
+  "loading_scores": "Loading scores…",
   "players": {
     "one": "{count} player",
     "other": "{count} players"
